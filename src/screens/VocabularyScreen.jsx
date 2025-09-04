@@ -1,17 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useAppLanguage } from '../context/AppLanguageContext';
+import { useFlashcards } from '../context/FlashcardContext';
 import BackButton from '../components/BackButton';
+import FlashcardRatingGrid from '../components/FlashcardRatingGrid';
 import { vocabularyContent } from '../content/vocabulary';
 
 export default function VocabularyScreen({ route, navigation }) {
   const { t, direction, level, language } = useAppLanguage();
+  const { saveFlashcardProgress } = useFlashcards();
   const day = route?.params?.day ?? 1;
   const [mode, setMode] = useState('list'); // 'list' | 'flashcards'
   const [index, setIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [ratings, setRatings] = useState({}); // index -> 1..5
+  const [currentRating, setCurrentRating] = useState(null);
 
   const items = useMemo(() => {
     const lvl = vocabularyContent[level] ?? vocabularyContent['A1'];
@@ -28,6 +31,46 @@ export default function VocabularyScreen({ route, navigation }) {
   }
 
   const current = items[index] ?? items[0];
+
+  const handleRating = async (rating) => {
+    setCurrentRating(rating);
+    
+    try {
+      const wordData = {
+        ...current,
+        day: day,
+      };
+      
+      const { error } = await saveFlashcardProgress(wordData, rating);
+      
+      if (error) {
+        Alert.alert(t('error'), t('errorSavingProgress'));
+        return;
+      }
+
+      // Move to next flashcard after a short delay
+      setTimeout(() => {
+        const nextIndex = (index + 1) % items.length;
+        setIndex(nextIndex);
+        setShowAnswer(false);
+        setCurrentRating(null);
+        
+        // If we've completed all cards, show completion message
+        if (nextIndex === 0 && index === items.length - 1) {
+          Alert.alert(
+            t('congratulations'),
+            t('completedAllCards'),
+            [
+              { text: t('continue'), onPress: () => navigation.goBack() }
+            ]
+          );
+        }
+      }, 1000);
+    } catch (error) {
+      console.error('Error saving flashcard progress:', error);
+      Alert.alert(t('error'), t('errorSavingProgress'));
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -85,25 +128,13 @@ export default function VocabularyScreen({ route, navigation }) {
               <Text style={styles.smallBtnText}>{t('next')}</Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.ratingRow}>
-            {[
-              { key: 5, color: '#3A7AFE' }, // blue perfect
-              { key: 4, color: '#2EC971' }, // green good
-              { key: 3, color: '#F5C542' }, // yellow mid
-              { key: 2, color: '#F39B2D' }, // orange bad
-              { key: 1, color: '#7C3AED' }, // purple not at all
-            ].map((r) => (
-              <TouchableOpacity
-                key={r.key}
-                style={[styles.ratingBar, { backgroundColor: r.color, opacity: ratings[index] === r.key ? 1 : 0.7 }]}
-                onPress={() => {
-                  setRatings((old) => ({ ...old, [index]: r.key }));
-                  setIndex((i) => (i + 1) % items.length);
-                  setShowAnswer(false);
-                }}
-              />
-            ))}
-          </View>
+          {showAnswer && (
+            <FlashcardRatingGrid
+              onRating={handleRating}
+              selectedRating={currentRating}
+              showInstruction={true}
+            />
+          )}
         </>
       )}
     </ScrollView>
@@ -138,8 +169,7 @@ const styles = StyleSheet.create({
   flashActions: { marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   smallBtn: { flex: 1, backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   smallBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
-  ratingRow: { marginTop: 14, flexDirection: 'row', gap: 10, justifyContent: 'space-between' },
-  ratingBar: { flex: 1, height: 18, borderRadius: 10 },
+
 });
 
 

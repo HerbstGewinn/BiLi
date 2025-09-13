@@ -61,21 +61,9 @@ export default function SignUpScreen({ navigation }) {
           error.message || t('signUpErrorGeneric')
         );
       } else {
-        Alert.alert(
-          t('checkEmail'),
-          t('checkEmailMessage'),
-          [
-            {
-              text: t('ok'),
-              onPress: () => {
-                // After successful signup, user will be redirected to onboarding
-                // through the AuthGuard when they verify their email and sign in
-                // No need to navigate manually - AuthGuard will handle this
-                console.log('Signup complete, AuthGuard will handle navigation');
-              },
-            },
-          ]
-        );
+        // Signup successful - user will be automatically redirected to onboarding
+        // through the AuthGuard when they sign in
+        console.log('Signup complete, AuthGuard will handle navigation');
       }
     } catch (error) {
       Alert.alert(t('signUpError'), t('signUpErrorGeneric'));

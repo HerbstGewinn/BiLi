@@ -5,35 +5,39 @@
     "scheme": "bili",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/bili_logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/bili_logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#6C63FF"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bili.app"
+      "bundleIdentifier": "com.biliapp.bili",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/bili_logo.png",
         "backgroundColor": "#6C63FF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.bili.app"
+      "package": "com.biliapp.bili"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/bili_logo.png"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-asset"
     ],
     "extra": {
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "887a6893-24ec-446b-b276-1f50e8f2f562"
       }
     }
   }

@@ -389,28 +389,39 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 4,
     letterSpacing: -0.3,
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
   heroEmail: {
     color: '#FFFFFF80',
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 12,
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
   heroLanguages: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
   languageTag: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    flexShrink: 1,
+    minWidth: 0,
   },
   languageText: {
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
+    flexWrap: 'wrap',
+    flexShrink: 1,
+    textAlign: 'center',
   },
 
   // Progress Section
@@ -424,6 +435,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 16,
     letterSpacing: -0.3,
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
   progressOverview: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -445,6 +458,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
   progressMainValue: {
     color: '#FFFFFF',
@@ -452,11 +467,15 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 4,
     letterSpacing: -0.5,
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
   progressMainSubtext: {
     color: '#FFFFFF70',
     fontSize: 12,
     fontWeight: '500',
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
 
   // Stats Section
@@ -496,6 +515,9 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    flexWrap: 'wrap',
+    flexShrink: 1,
+    flex: 1,
   },
   statCardValue: {
     color: '#FFFFFF',
@@ -503,11 +525,15 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 2,
     letterSpacing: -0.5,
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
   statCardSubtitle: {
     color: '#FFFFFF70',
     fontSize: 11,
     fontWeight: '500',
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
 
   // Mastery Section
@@ -541,11 +567,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
   masteryCount: {
     color: '#FFFFFF70',
     fontSize: 13,
     fontWeight: '500',
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
   masteryIndicator: {
     width: 4,
@@ -582,6 +612,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+    flexWrap: 'wrap',
+    flexShrink: 1,
+    textAlign: 'center',
   },
   secondaryActionButton: {
     flexDirection: 'row',
@@ -599,6 +632,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+    flexWrap: 'wrap',
+    flexShrink: 1,
+    textAlign: 'center',
   },
   logoutButton: {
     flexDirection: 'row',
@@ -611,6 +647,9 @@ const styles = StyleSheet.create({
     color: '#ff6b6b',
     fontSize: 14,
     fontWeight: '600',
+    flexWrap: 'wrap',
+    flexShrink: 1,
+    textAlign: 'center',
   },
   buttonDisabled: {
     opacity: 0.5,

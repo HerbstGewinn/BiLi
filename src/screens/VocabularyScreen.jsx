@@ -142,9 +142,9 @@ export default function VocabularyScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 80, paddingBottom: 40 },
-  title: { color: '#fff', fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 16 },
-  empty: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  container: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 80, paddingBottom: 120 },
+  title: { color: '#fff', fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 16, flexWrap: 'wrap', flexShrink: 1 },
+  empty: { color: '#fff', fontSize: 18, fontWeight: '700', flexWrap: 'wrap', flexShrink: 1, textAlign: 'center' },
   list: { gap: 12 },
   card: {
     backgroundColor: 'rgba(255,255,255,0.10)',
@@ -153,22 +153,22 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.25)',
     padding: 16,
   },
-  cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  wordPrimary: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  wordSecondary: { color: '#E8E6FF', fontSize: 16, fontWeight: '600' },
+  cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
+  wordPrimary: { color: '#fff', fontSize: 18, fontWeight: '800', flexWrap: 'wrap', flexShrink: 1, flex: 1 },
+  wordSecondary: { color: '#E8E6FF', fontSize: 16, fontWeight: '600', flexWrap: 'wrap', flexShrink: 1, flex: 1, textAlign: 'right' },
   example: { marginTop: 8 },
-  exampleLabel: { color: '#CFCBFF', fontSize: 12, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.8 },
-  exampleText: { color: '#fff', fontSize: 14 },
+  exampleLabel: { color: '#CFCBFF', fontSize: 12, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.8, flexWrap: 'wrap', flexShrink: 1 },
+  exampleText: { color: '#fff', fontSize: 14, flexWrap: 'wrap', flexShrink: 1 },
   cta: { marginTop: 16, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  ctaText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  ctaText: { color: '#fff', fontSize: 16, fontWeight: '800', flexWrap: 'wrap', flexShrink: 1, textAlign: 'center' },
   flashCard: { marginTop: 16, backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', padding: 24, alignItems: 'center' },
-  flashFront: { color: '#fff', fontSize: 22, fontWeight: '900' },
-  flashBack: { color: '#E8E6FF', fontSize: 18, fontWeight: '700', marginTop: 8 },
+  flashFront: { color: '#fff', fontSize: 22, fontWeight: '900', flexWrap: 'wrap', flexShrink: 1, textAlign: 'center' },
+  flashBack: { color: '#E8E6FF', fontSize: 18, fontWeight: '700', marginTop: 8, flexWrap: 'wrap', flexShrink: 1, textAlign: 'center' },
   toggle: { marginTop: 12 },
-  toggleText: { color: '#CFCBFF', fontSize: 14, fontWeight: '700' },
+  toggleText: { color: '#CFCBFF', fontSize: 14, fontWeight: '700', flexWrap: 'wrap', flexShrink: 1, textAlign: 'center' },
   flashActions: { marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   smallBtn: { flex: 1, backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  smallBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  smallBtnText: { color: '#fff', fontSize: 14, fontWeight: '800', flexWrap: 'wrap', flexShrink: 1, textAlign: 'center' },
 
 });
 

@@ -20,6 +20,7 @@ import AuthGuard from './src/components/AuthGuard';
 import VocabularyScreen from './src/screens/VocabularyScreen.jsx';
 import VocabularyGalleryScreen from './src/screens/VocabularyGalleryScreen.jsx';
 import PracticeModeScreen from './src/screens/PracticeModeScreen.jsx';
+import VoiceAIScreen from './src/screens/VoiceAIScreen.jsx';
 // Auth screens
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
 import SignInScreen from './src/screens/auth/SignInScreen';
@@ -57,6 +58,7 @@ function Tabs() {
     >
       <Tab.Screen name="Home" component={HomeStack} options={{ headerShown: false }} />
       <Tab.Screen name="Gallery" component={GalleryStack} options={{ headerShown: false }} />
+      <Tab.Screen name="VoiceAI" component={VoiceAIScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

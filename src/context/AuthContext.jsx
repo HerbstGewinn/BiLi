@@ -20,19 +20,42 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Enhanced initial session recovery
     const getInitialSession = async () => {
       try {
+        console.log('🚀 Starting initial session recovery...');
+        
+        // Test storage health first
+        const storageHealth = authHelpers.getStorageHealth();
+        console.log('📊 Storage health check:', storageHealth);
+        
+        // Test SecureStore specifically first
+        const secureStoreTest = await authHelpers.testSecureStore();
+        console.log('🔐 SecureStore test result:', secureStoreTest);
+        
+        // Test general storage functionality
+        const storageTest = await authHelpers.testStorage();
+        console.log('🧪 General storage test result:', storageTest);
+        
+        // Simple session recovery - just get the session
         const { session, error } = await authHelpers.getSession();
+        
         if (error) {
-          console.error('Error getting initial session:', error);
+          console.error('❌ Session error:', error);
         } else if (session) {
+          console.log('✅ Session found:', session.user?.email);
+        } else {
+          console.log('ℹ️ No session found');
+        }
+        
+        if (session) {
           setSession(session);
           setUser(session.user);
           await loadUserProfile(session.user);
         }
+        
       } catch (error) {
-        console.error('Error in getInitialSession:', error);
+        console.error('❌ Error in getInitialSession:', error);
       } finally {
         setLoading(false);
       }
@@ -40,7 +63,7 @@ export function AuthProvider({ children }) {
 
     getInitialSession();
 
-    // Listen for auth changes
+    // Enhanced auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('=== AUTH STATE CHANGE DEBUG ===');
@@ -51,20 +74,48 @@ export function AuthProvider({ children }) {
         console.log('User Email:', session?.user?.email);
         console.log('================================');
         
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          console.log('Loading user profile for:', session.user.id);
-          await loadUserProfile(session.user);
-        } else {
-          console.log('No user in session, clearing profile');
-          setUserProfile(null);
-        }
-
-        if (event === 'SIGNED_OUT') {
-          console.log('User signed out, clearing profile');
-          setUserProfile(null);
+        // Handle different auth events
+        switch (event) {
+          case 'SIGNED_IN':
+            console.log('✅ User signed in successfully');
+            setSession(session);
+            setUser(session?.user ?? null);
+            if (session?.user) {
+              await loadUserProfile(session.user);
+            }
+            break;
+            
+          case 'SIGNED_OUT':
+            console.log('👋 User signed out');
+            setSession(null);
+            setUser(null);
+            setUserProfile(null);
+            break;
+            
+          case 'TOKEN_REFRESHED':
+            console.log('🔄 Token refreshed');
+            setSession(session);
+            if (session?.user) {
+              setUser(session.user);
+            }
+            break;
+            
+          case 'PASSWORD_RECOVERY':
+            console.log('🔑 Password recovery initiated');
+            break;
+            
+          default:
+            console.log('🔄 Auth state changed:', event);
+            setSession(session);
+            setUser(session?.user ?? null);
+            
+            if (session?.user) {
+              console.log('Loading user profile for:', session.user.id);
+              await loadUserProfile(session.user);
+            } else {
+              console.log('No user in session, clearing profile');
+              setUserProfile(null);
+            }
         }
 
         setLoading(false);

@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   },
   ratingContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 120,
   },
   ratingTitle: {
     fontSize: 16,

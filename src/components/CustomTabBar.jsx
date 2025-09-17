@@ -20,7 +20,9 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
             }
           };
 
-          const iconName = route.name === 'Home' ? 'home' : route.name === 'Gallery' ? 'layers' : 'user';
+          const iconName = route.name === 'Home' ? 'home' : 
+                          route.name === 'Gallery' ? 'layers' : 
+                          route.name === 'VoiceAI' ? 'mic' : 'user';
           const color = isFocused ? '#D9D4FF' : '#FFFFFFAA';
 
           return (
@@ -41,7 +43,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingBottom: Platform.OS === 'ios' ? 28 : 16,
-    paddingTop: 16,
     alignItems: 'center',
   },
   footerBg: {
@@ -61,10 +62,14 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
   row: {
+    position: 'absolute',
+    bottom: 8,
+    left: 16,
+    right: 16,
+    height: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-evenly',
-    width: '100%',
     paddingHorizontal: 36,
   },
   tab: { padding: 12 },

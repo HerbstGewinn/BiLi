@@ -5,108 +5,329 @@ import * as SecureStore from 'expo-secure-store';
 const supabaseUrl = 'https://wcdyuqrbkxkzbbwpxmow.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZHl1cXJia3hremJid3B4bW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2MjA3OTIsImV4cCI6MjA3MjE5Njc5Mn0.UbiggRRLFYsbdwfHPeKH7rH0Oa0yQ0IF3CtLeX-fEoc';
 
-// Custom storage adapter that uses expo-secure-store for tokens
+// Enhanced storage adapter with redundancy and better error handling
 class SupabaseStorage {
+  constructor() {
+    this.storageHealth = {
+      secureStore: true,
+      asyncStorage: true,
+      lastError: null
+    };
+  }
+
   async getItem(key) {
+    console.log('🔍 Storage getItem called for key:', key);
+    
     try {
-      console.log('Storage getItem called for key:', key);
+      // For auth tokens, try multiple storage methods with redundancy
+      if (key.includes('token') || key.includes('auth')) {
+        return await this.getAuthToken(key);
+      }
       
-      // Use SecureStore for sensitive auth tokens
-      if (key.includes('token') || key.includes('auth')) {
-        const value = await SecureStore.getItemAsync(key);
-        console.log('Retrieved from SecureStore:', key, value ? `${value.length} chars` : 'null');
-        
-        // Handle large tokens by checking size
-        if (value && value.length > 2000) {
-          console.warn('Large token detected, consider implementing token refresh');
-        }
-        return value;
-      }
-      // Use AsyncStorage for other data
+      // For other data, use AsyncStorage
       const value = await AsyncStorage.getItem(key);
-      console.log('Retrieved from AsyncStorage:', key, value ? `${value.length} chars` : 'null');
+      console.log('📦 Retrieved from AsyncStorage:', key, value ? `${value.length} chars` : 'null');
       return value;
+      
     } catch (error) {
-      console.error('Error getting item from storage:', error);
-      // If SecureStore fails, try AsyncStorage as fallback for auth data
-      if (key.includes('token') || key.includes('auth')) {
-        try {
-          const fallbackValue = await AsyncStorage.getItem(key);
-          console.log('Fallback retrieval from AsyncStorage:', key, fallbackValue ? `${fallbackValue.length} chars` : 'null');
-          return fallbackValue;
-        } catch (fallbackError) {
-          console.error('Fallback storage also failed:', fallbackError);
-          return null;
-        }
-      }
+      console.error('❌ Error getting item from storage:', error);
+      this.storageHealth.lastError = error;
       return null;
     }
   }
 
-  async setItem(key, value) {
+  async getAuthToken(key) {
+    console.log('🔐 Getting auth token for key:', key);
+    
+    // Strategy 1: Try SecureStore first (primary approach)
     try {
-      // Use SecureStore for sensitive auth tokens
-      if (key.includes('token') || key.includes('auth')) {
-        // Check if token is too large for SecureStore
-        if (value && value.length > 2000) {
-          console.warn('Token too large for SecureStore, using AsyncStorage');
-          await AsyncStorage.setItem(key, value);
-        } else {
-          await SecureStore.setItemAsync(key, value);
-        }
+      const secureValue = await SecureStore.getItemAsync(key);
+      if (secureValue && this.isValidToken(secureValue)) {
+        console.log('✅ Retrieved from SecureStore:', key, `${secureValue.length} chars`);
+        this.storageHealth.secureStore = true;
+        return secureValue;
+      } else if (secureValue) {
+        console.warn('⚠️ Invalid token from SecureStore, trying fallback');
       } else {
-        // Use AsyncStorage for other data
-        await AsyncStorage.setItem(key, value);
+        console.log('ℹ️ No token in SecureStore, trying fallback');
       }
     } catch (error) {
-      console.error('Error setting item in storage:', error);
-      // If SecureStore fails, fallback to AsyncStorage
+      console.error('❌ SecureStore failed:', error);
+      this.storageHealth.secureStore = false;
+    }
+
+    // Strategy 2: Try AsyncStorage as fallback
+    try {
+      const asyncValue = await AsyncStorage.getItem(key);
+      if (asyncValue && this.isValidToken(asyncValue)) {
+        console.log('✅ Retrieved from AsyncStorage fallback:', key, `${asyncValue.length} chars`);
+        this.storageHealth.asyncStorage = true;
+        
+        // Try to restore to SecureStore for future use
+        this.restoreToSecureStore(key, asyncValue);
+        return asyncValue;
+      } else if (asyncValue) {
+        console.warn('⚠️ Invalid token from AsyncStorage fallback');
+      }
+    } catch (error) {
+      console.error('❌ AsyncStorage fallback failed:', error);
+      this.storageHealth.asyncStorage = false;
+    }
+
+    console.log('ℹ️ No valid token found in any storage for key:', key);
+    return null;
+  }
+
+  isValidToken(token) {
+    // Simple validation - just check if it's a non-empty string
+    // Don't over-engineer this - Supabase will handle token validation
+    if (!token || typeof token !== 'string') return false;
+    if (token.length < 10) return false; // Too short to be valid
+    return true; // Let Supabase handle the rest
+  }
+
+  // Parse JWT token to get user info
+  parseToken(token) {
+    try {
+      if (!token || !token.includes('.')) return null;
+      
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      
+      const payload = JSON.parse(atob(parts[1]));
+      return {
+        sub: payload.sub,
+        email: payload.email,
+        exp: payload.exp,
+        iat: payload.iat,
+        aud: payload.aud,
+        iss: payload.iss
+      };
+    } catch (error) {
+      console.error('❌ Failed to parse token:', error);
+      return null;
+    }
+  }
+
+  async restoreToSecureStore(key, value) {
+    try {
+      await SecureStore.setItemAsync(key, value);
+      console.log('✅ Restored token to SecureStore');
+      this.storageHealth.secureStore = true;
+    } catch (error) {
+      console.warn('⚠️ Could not restore to SecureStore:', error);
+    }
+  }
+
+  async setItem(key, value) {
+    console.log('💾 Storage setItem called for key:', key, 'value length:', value?.length);
+    
+    try {
+      // For auth tokens, use redundant storage strategy
       if (key.includes('token') || key.includes('auth')) {
-        try {
-          await AsyncStorage.setItem(key, value);
-        } catch (fallbackError) {
-          console.error('Fallback storage also failed:', fallbackError);
-        }
+        return await this.setAuthToken(key, value);
+      }
+      
+      // For other data, use AsyncStorage
+      await AsyncStorage.setItem(key, value);
+      console.log('✅ Stored in AsyncStorage:', key);
+      
+    } catch (error) {
+      console.error('❌ Error setting item in storage:', error);
+      this.storageHealth.lastError = error;
+    }
+  }
+
+  async setAuthToken(key, value) {
+    console.log('🔐 Setting auth token for key:', key, 'length:', value?.length);
+    
+    if (!value) {
+      console.warn('⚠️ Attempting to store null/undefined token');
+      return;
+    }
+
+    // Simple validation - just check if it's a string
+    if (typeof value !== 'string' || value.length < 10) {
+      console.error('❌ Invalid token format, not storing');
+      return;
+    }
+
+    // Strategy 1: Try SecureStore first (primary approach)
+    try {
+      await SecureStore.setItemAsync(key, value);
+      console.log('✅ Stored in SecureStore:', key);
+      this.storageHealth.secureStore = true;
+      
+      // Also store in AsyncStorage as backup (but don't fail if this fails)
+      try {
+        await AsyncStorage.setItem(key, value);
+        console.log('✅ Also stored in AsyncStorage backup:', key);
+        this.storageHealth.asyncStorage = true;
+      } catch (backupError) {
+        console.warn('⚠️ AsyncStorage backup failed (non-critical):', backupError);
+        this.storageHealth.asyncStorage = false;
+      }
+      
+      return; // Success with SecureStore
+      
+    } catch (error) {
+      console.error('❌ SecureStore failed, trying AsyncStorage only:', error);
+      this.storageHealth.secureStore = false;
+      
+      // Strategy 2: Fallback to AsyncStorage only
+      try {
+        await AsyncStorage.setItem(key, value);
+        console.log('✅ Stored in AsyncStorage (fallback):', key);
+        this.storageHealth.asyncStorage = true;
+      } catch (fallbackError) {
+        console.error('❌ AsyncStorage fallback also failed:', fallbackError);
+        this.storageHealth.asyncStorage = false;
+        throw new Error('Token storage failed completely');
       }
     }
   }
 
   async removeItem(key) {
+    console.log('🗑️ Storage removeItem called for key:', key);
+    
     try {
-      // Try both storage methods
+      // For auth tokens, remove from both storage methods
       if (key.includes('token') || key.includes('auth')) {
-        await SecureStore.deleteItemAsync(key);
+        await this.removeAuthToken(key);
       } else {
         await AsyncStorage.removeItem(key);
+        console.log('✅ Removed from AsyncStorage:', key);
       }
     } catch (error) {
-      console.error('Error removing item from storage:', error);
+      console.error('❌ Error removing item from storage:', error);
+      this.storageHealth.lastError = error;
+    }
+  }
+
+  async removeAuthToken(key) {
+    let removedSuccessfully = false;
+
+    // Remove from SecureStore
+    try {
+      await SecureStore.deleteItemAsync(key);
+      console.log('✅ Removed from SecureStore:', key);
+      removedSuccessfully = true;
+    } catch (error) {
+      console.error('❌ Failed to remove from SecureStore:', error);
+    }
+
+    // Remove from AsyncStorage
+    try {
+      await AsyncStorage.removeItem(key);
+      console.log('✅ Removed from AsyncStorage:', key);
+      removedSuccessfully = true;
+    } catch (error) {
+      console.error('❌ Failed to remove from AsyncStorage:', error);
+    }
+
+    if (!removedSuccessfully) {
+      console.warn('⚠️ Failed to remove token from any storage method');
+    }
+  }
+
+  // Storage health monitoring
+  getStorageHealth() {
+    return {
+      ...this.storageHealth,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  // Test storage functionality
+  async testStorage() {
+    const testKey = 'bili-storage-test';
+    const testValue = 'test-value-' + Date.now();
+    
+    console.log('🧪 Testing storage functionality...');
+    
+    try {
+      // Test setItem
+      await this.setItem(testKey, testValue);
+      
+      // Test getItem
+      const retrieved = await this.getItem(testKey);
+      
+      // Test removeItem
+      await this.removeItem(testKey);
+      
+      const success = retrieved === testValue;
+      console.log(success ? '✅ Storage test PASSED' : '❌ Storage test FAILED');
+      
+      return {
+        success,
+        retrieved,
+        expected: testValue
+      };
+    } catch (error) {
+      console.error('❌ Storage test error:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // Test SecureStore specifically
+  async testSecureStore() {
+    const testKey = 'bili-securestore-test';
+    const testValue = 'secure-test-' + Date.now();
+    
+    console.log('🔐 Testing SecureStore specifically...');
+    
+    try {
+      // Test SecureStore setItem
+      await SecureStore.setItemAsync(testKey, testValue);
+      console.log('✅ SecureStore setItem successful');
+      
+      // Test SecureStore getItem
+      const retrieved = await SecureStore.getItemAsync(testKey);
+      console.log('✅ SecureStore getItem successful:', retrieved ? `${retrieved.length} chars` : 'null');
+      
+      // Test SecureStore removeItem
+      await SecureStore.deleteItemAsync(testKey);
+      console.log('✅ SecureStore removeItem successful');
+      
+      const success = retrieved === testValue;
+      console.log(success ? '✅ SecureStore test PASSED' : '❌ SecureStore test FAILED');
+      
+      return {
+        success,
+        retrieved,
+        expected: testValue,
+        secureStoreWorking: true
+      };
+    } catch (error) {
+      console.error('❌ SecureStore test error:', error);
+      return {
+        success: false,
+        error: error.message,
+        secureStoreWorking: false
+      };
     }
   }
 }
 
+// Create storage instance with health monitoring
+const storage = new SupabaseStorage();
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: new SupabaseStorage(),
+    storage: storage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
-    // Add retry and timeout settings for better reliability
+    // Use standard flow type
     flowType: 'pkce',
   },
-  // Add global config for better error handling
-  global: {
-    headers: {
-      'X-Client-Info': 'bili-app@1.0.0',
-    },
-  },
-  // Enable realtime for better session sync
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
-  },
 });
+
+// Export storage instance for health monitoring
+export { storage };
 
 // Helper functions for auth operations
 export const authHelpers = {
@@ -382,9 +603,118 @@ export const authHelpers = {
     }
   },
 
-  // Get session
+  // Get session with enhanced error handling
   async getSession() {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    return { session, error };
+    try {
+      console.log('🔍 Getting session...');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('❌ Session error:', error);
+        // Check storage health if session fails
+        const health = storage.getStorageHealth();
+        console.log('📊 Storage health:', health);
+      } else if (session) {
+        console.log('✅ Session found:', session.user?.email);
+      } else {
+        console.log('ℹ️ No active session');
+      }
+      
+      return { session, error };
+    } catch (error) {
+      console.error('❌ Exception in getSession:', error);
+      return { session: null, error };
+    }
+  },
+
+  // Test storage functionality
+  async testStorage() {
+    return await storage.testStorage();
+  },
+
+  // Test SecureStore specifically
+  async testSecureStore() {
+    return await storage.testSecureStore();
+  },
+
+  // Get storage health
+  getStorageHealth() {
+    return storage.getStorageHealth();
+  },
+
+  // Simple session refresh
+  async refreshSession() {
+    try {
+      console.log('🔄 Refreshing session...');
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('❌ Session refresh failed:', error);
+      } else {
+        console.log('✅ Session refreshed successfully');
+      }
+      
+      return { data, error };
+    } catch (error) {
+      console.error('❌ Exception in refreshSession:', error);
+      return { data: null, error };
+    }
+  },
+
+  // Recover session from stored tokens
+  async recoverSessionFromStorage() {
+    try {
+      console.log('🔧 Attempting session recovery from storage...');
+      
+      // Get stored tokens from our custom storage
+      const accessToken = await storage.getItem('sb-wcdyuqrbkxkzbbwpxmow-auth-token');
+      const refreshToken = await storage.getItem('sb-wcdyuqrbkxkzbbwpxmow-auth-refresh-token');
+      
+      if (!accessToken || !refreshToken) {
+        console.log('ℹ️ No tokens found in storage for recovery');
+        return { data: null, error: { message: 'No tokens found for recovery' } };
+      }
+      
+      // Simple validation - just check if tokens exist and are strings
+      if (typeof accessToken !== 'string' || typeof refreshToken !== 'string') {
+        console.log('⚠️ Tokens are not valid strings, clearing storage');
+        await storage.removeItem('sb-wcdyuqrbkxkzbbwpxmow-auth-token');
+        await storage.removeItem('sb-wcdyuqrbkxkzbbwpxmow-auth-refresh-token');
+        return { data: null, error: { message: 'Invalid token format' } };
+      }
+      
+      console.log('🔑 Found valid tokens in storage, attempting to set session...');
+      
+      // Try to set the session using the stored tokens
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+      
+      if (error) {
+        console.error('❌ Failed to set session from stored tokens:', error);
+        // If setSession fails, clear the invalid tokens
+        await storage.removeItem('sb-wcdyuqrbkxkzbbwpxmow-auth-token');
+        await storage.removeItem('sb-wcdyuqrbkxkzbbwpxmow-auth-refresh-token');
+        return { data: null, error };
+      }
+      
+      if (data.session) {
+        console.log('✅ Session recovered successfully from storage');
+        return { data, error: null };
+      } else {
+        console.log('ℹ️ Session recovery returned no session');
+        return { data: null, error: { message: 'Session recovery returned no session' } };
+      }
+      
+    } catch (error) {
+      console.error('❌ Exception in recoverSessionFromStorage:', error);
+      return { data: null, error };
+    }
+  },
+
+  // Manual session recovery (for debugging)
+  async manualSessionRecovery() {
+    return await this.recoverSessionFromStorage();
   },
 };

@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.biliapp.bili",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSMicrophoneUsageDescription": "This app needs access to microphone for voice AI conversations"
       }
     },
     "android": {
@@ -26,14 +27,21 @@
         "backgroundColor": "#6C63FF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.biliapp.bili"
+      "package": "com.biliapp.bili",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "favicon": "./assets/bili_logo.png"
     },
     "plugins": [
       "expo-secure-store",
-      "expo-asset"
+      "expo-asset",
+      "expo-dev-client"
     ],
     "extra": {
       "eas": {

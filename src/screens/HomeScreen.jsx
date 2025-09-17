@@ -11,117 +11,25 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppLanguage } from '../context/AppLanguageContext';
+import { learningTopics } from '../content/learningTopics';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-// Compelling learning topics for each day
-const learningTopics = {
-  1: {
-    title: "Small Talk & Basics",
-    icon: "💬",
-    description: "Greetings, introductions & courtesy",
-    highlights: ["Hello & goodbye", "Please & thank you", "Basic questions"],
-    gradientColors: ['#667eea', '#764ba2']
-  },
-  2: {
-    title: "Family & Relationships", 
-    icon: "👨‍👩‍👧‍👦",
-    description: "People in your life",
-    highlights: ["Family members", "Relationships", "Personal connections"],
-    gradientColors: ['#f093fb', '#f5576c']
-  },
-  3: {
-    title: "Home & Living",
-    icon: "🏠", 
-    description: "Your personal space",
-    highlights: ["Rooms & furniture", "Daily routines", "Household items"],
-    gradientColors: ['#4facfe', '#00f2fe']
-  },
-  4: {
-    title: "Food & Dining",
-    icon: "🍽️",
-    description: "Meals and culinary culture", 
-    highlights: ["Restaurants & ordering", "Cooking terms", "Food preferences"],
-    gradientColors: ['#fa709a', '#fee140']
-  },
-  5: {
-    title: "Work & Education",
-    icon: "💼",
-    description: "Professional and academic life",
-    highlights: ["Office vocabulary", "School terms", "Career conversations"],
-    gradientColors: ['#a8edea', '#fed6e3']
-  },
-  6: {
-    title: "Shopping & Money",
-    icon: "🛒",
-    description: "Commerce and transactions",
-    highlights: ["Shopping phrases", "Prices & payment", "Stores & services"],
-    gradientColors: ['#ff9a9e', '#fecfef']
-  },
-  7: {
-    title: "Transportation & Travel",
-    icon: "✈️",
-    description: "Getting around and exploring",
-    highlights: ["Public transport", "Directions", "Travel planning"],
-    gradientColors: ['#a18cd1', '#fbc2eb']
-  },
-  8: {
-    title: "Health & Body",
-    icon: "🏥",
-    description: "Wellness and medical topics",
-    highlights: ["Body parts", "Symptoms", "Doctor visits"],
-    gradientColors: ['#ffecd2', '#fcb69f']
-  },
-  9: {
-    title: "Time & Weather",
-    icon: "🌤️",
-    description: "Temporal and meteorological expressions",
-    highlights: ["Days & seasons", "Weather conditions", "Time expressions"],
-    gradientColors: ['#89f7fe', '#66a6ff']
-  },
-  10: {
-    title: "Hobbies & Entertainment",
-    icon: "🎵",
-    description: "Leisure activities and fun",
-    highlights: ["Sports & games", "Music & movies", "Weekend activities"],
-    gradientColors: ['#fdbb2d', '#22c1c3']
-  },
-  11: {
-    title: "Technology & Communication",
-    icon: "📱",
-    description: "Digital life and connectivity",
-    highlights: ["Phone & internet", "Social media", "Tech problems"],
-    gradientColors: ['#ee9ca7', '#ffdde1']
-  },
-  12: {
-    title: "Nature & Environment",
-    icon: "🌱",
-    description: "The natural world around us",
-    highlights: ["Animals & plants", "Geography", "Environmental topics"],
-    gradientColors: ['#83a4d4', '#b6fbff']
-  },
-  13: {
-    title: "Culture & Traditions", 
-    icon: "🎭",
-    description: "Cultural understanding and customs",
-    highlights: ["Holidays & festivals", "Traditions", "Cultural expressions"],
-    gradientColors: ['#cd9cf2', '#f6f3ff']
-  },
-  14: {
-    title: "Advanced Conversations",
-    icon: "🗣️",
-    description: "Complex topics and discussions", 
-    highlights: ["Opinions & debates", "Abstract concepts", "Fluent expression"],
-    gradientColors: ['#ffeaa7', '#fab1a0']
+
+// Get current day based on level (for now, we'll use the first day of each level as active)
+const getCurrentDay = (level) => {
+  switch (level) {
+    case 'A1': return 1;
+    case 'A2': return 31;
+    case 'B1': return 61;
+    case 'B2': return 91;
+    default: return 1;
   }
 };
 
-// Get current day (for now, we'll use Day 1 as active)
-const getCurrentDay = () => 1;
-
-const DayBanner = ({ navigation, t }) => {
+const DayBanner = ({ navigation, t, level }) => {
   const [bannerState, setBannerState] = useState('collapsed'); // collapsed, expanded, navigating
-  const currentDay = getCurrentDay();
+  const currentDay = getCurrentDay(level);
   const topic = learningTopics[currentDay];
   
   // Get translated topic content
@@ -186,7 +94,24 @@ const DayBanner = ({ navigation, t }) => {
       
       setTimeout(() => {
         navigation.navigate('Vocabulary', { day: currentDay });
+        // Reset state after navigation to ensure it's clickable when returning
+        setTimeout(() => {
+          setBannerState('collapsed');
+          animatedHeight.value = 120;
+          topicOpacity.value = 0;
+          bannerScale.value = 1;
+          backgroundScale.value = 1;
+        }, 100);
       }, 400);
+    } else if (bannerState === 'navigating') {
+      // If somehow in navigating state, reset to collapsed
+      setBannerState('collapsed');
+      animatedHeight.value = withSpring(120, {
+        damping: 20,
+        stiffness: 120
+      });
+      topicOpacity.value = withTiming(0, { duration: 200 });
+      backgroundScale.value = withTiming(1, { duration: 200 });
     }
   };
 
@@ -248,7 +173,6 @@ const DayBanner = ({ navigation, t }) => {
                   <View style={styles.highlightsContainer}>
                     {translatedTopic.highlights.map((highlight, index) => (
                       <View key={index} style={styles.highlightItem}>
-                        <View style={styles.highlightDot} />
                         <Text style={styles.highlightText}>{highlight}</Text>
                       </View>
                     ))}
@@ -280,7 +204,7 @@ const DayBanner = ({ navigation, t }) => {
 };
 
 export default function HomeScreen({ navigation }) {
-  const { t, language } = useAppLanguage();
+  const { t, language, level } = useAppLanguage();
   
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -293,7 +217,7 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       {/* Main Day Banner */}
-      <DayBanner navigation={navigation} t={t} />
+      <DayBanner navigation={navigation} t={t} level={level} />
 
       {/* Progress indicator */}
       <View style={styles.progressSection}>
@@ -301,11 +225,43 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.progressLabel}>
             {t('learningProgress') || 'Learning Progress'}
           </Text>
-          <Text style={styles.progressValue}>1/14 {t('days') || 'days'}</Text>
+          <Text style={styles.progressValue}>
+            {(() => {
+              const { start, end } = (() => {
+                switch (level) {
+                  case 'A1': return { start: 1, end: 30 };
+                  case 'A2': return { start: 31, end: 60 };
+                  case 'B1': return { start: 61, end: 90 };
+                  case 'B2': return { start: 91, end: 120 };
+                  default: return { start: 1, end: 30 };
+                }
+              })();
+              const currentDay = getCurrentDay(level);
+              const totalDays = end - start + 1;
+              const progress = currentDay - start + 1;
+              return `${progress}/${totalDays} ${t('days') || 'days'}`;
+            })()}
+          </Text>
         </View>
         <View style={styles.progressBarContainer}>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${(1/14) * 100}%` }]} />
+            <View style={[styles.progressFill, { 
+              width: `${(() => {
+                const { start, end } = (() => {
+                  switch (level) {
+                    case 'A1': return { start: 1, end: 30 };
+                    case 'A2': return { start: 31, end: 60 };
+                    case 'B1': return { start: 61, end: 90 };
+                    case 'B2': return { start: 91, end: 120 };
+                    default: return { start: 1, end: 30 };
+                  }
+                })();
+                const currentDay = getCurrentDay(level);
+                const totalDays = end - start + 1;
+                const progress = currentDay - start + 1;
+                return (progress / totalDays) * 100;
+              })()}%` 
+            }]} />
           </View>
         </View>
       </View>
@@ -316,27 +272,49 @@ export default function HomeScreen({ navigation }) {
           {t('comingUp') || 'Coming Up Next'}
         </Text>
         <View style={styles.nextTopics}>
-          {[2, 3, 4].map(day => {
-            const nextTopic = learningTopics[day];
-            const translatedNextTopic = {
-              ...nextTopic,
-              title: t('topics')?.[nextTopic.title] || nextTopic.title
+          {(() => {
+            // Calculate the correct day range based on level
+            const getDayRange = (level) => {
+              switch (level) {
+                case 'A1': return { start: 1, end: 30 };
+                case 'A2': return { start: 31, end: 60 };
+                case 'B1': return { start: 61, end: 90 };
+                case 'B2': return { start: 91, end: 120 };
+                default: return { start: 1, end: 30 };
+              }
             };
             
-            return (
-              <View key={day} style={styles.nextTopic}>
-                <Text style={styles.nextTopicIcon}>{translatedNextTopic.icon}</Text>
-                <View style={styles.nextTopicInfo}>
-                  <Text style={styles.nextTopicDay}>
-                    {t('day')} {day}
-                  </Text>
-                  <Text style={styles.nextTopicTitle}>
-                    {translatedNextTopic.title}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
+            const { start, end } = getDayRange(level);
+            const totalDays = end - start + 1;
+            
+            return Array.from({ length: totalDays }, (_, i) => {
+              const day = start + i;
+              const nextTopic = learningTopics[day];
+              const translatedNextTopic = {
+                ...nextTopic,
+                title: t('topics')?.[nextTopic.title] || nextTopic.title
+              };
+              
+              return (
+                <TouchableOpacity 
+                  key={day} 
+                  style={styles.nextTopic}
+                  onPress={() => navigation.navigate('Vocabulary', { day })}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.nextTopicIcon}>{translatedNextTopic.icon}</Text>
+                  <View style={styles.nextTopicInfo}>
+                    <Text style={styles.nextTopicDay}>
+                      {t('day')} {day}
+                    </Text>
+                    <Text style={styles.nextTopicTitle}>
+                      {translatedNextTopic.title}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            });
+          })()}
         </View>
       </View>
     </ScrollView>
@@ -347,7 +325,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 120,
     paddingHorizontal: 20,
   },
   
@@ -488,13 +466,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  highlightDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FFFFFF80',
-    marginRight: 12,
   },
   highlightText: {
     color: '#FFFFFF',
